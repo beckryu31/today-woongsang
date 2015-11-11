@@ -49,7 +49,7 @@ class Boards_model extends CI_Model {
     }
 
     public function getPosting($regionCode, $boardType) {
-        $queryString = "SELECT BoardTable.coSn, coWriter, coNick, coPhotoCount, coReplyCount, coContent, BoardTable.coEntryDate FROM BoardTable INNER JOIN UserTable ON BoardTable.coWriter=UserTable.coSn WHERE coDelete=0 AND BoardTable.coRegion=? AND BoardTable.coType=? ORDER BY BoardTable.coEntryDate DESC";
+        $queryString = "SELECT BoardTable.coSn, coWriter, coNick, coPhotoCount, coReplyCount, coContent, BoardTable.coEntryDate FROM BoardTable INNER JOIN UserTable ON BoardTable.coWriter=UserTable.coSn WHERE BoardTable.coRegion=? AND BoardTable.coType=? AND coDelete=0 AND coParentSn=0 ORDER BY BoardTable.coEntryDate DESC";
         $queryResult = $this->db->query($queryString, array($regionCode, $boardType));
 
         if ($queryResult->num_rows() == 0) {
@@ -109,5 +109,66 @@ class Boards_model extends CI_Model {
         } else {
             return $queryResult->result_array();
         }
+    }
+
+    public function getTalkContent($postSn, $userSn) {
+        $data = array();
+        $data['content'] = "";
+        $data['like'] = 0;
+
+        $queryString = "SELECT coContent FROM BoardTable WHERE coSn=?";
+        $queryResult = $this->db->query($queryString, array($postSn));
+        if ($queryResult->num_rows() == 0) {
+            return $data;
+        }
+        if (is_null($queryResult->row()->coContent)) {
+            return $data;
+        }
+        $data['content'] = $queryResult->row()->coContent;
+        $queryString = "SELECT COUNT(coPostSn) AS coLike FROM FavorateTable WHERE coUserSn=? AND coPostSn=?";
+        $queryResult = $this->db->query($queryString, array($userSn, $postSn));
+        $data['like'] = $queryResult->row()->coLike;
+
+        return $data;
+    }
+
+    public function getNoticeContent($postSn) {
+        $queryString = "SELECT coContent FROM BoardTable WHERE coSn=?";
+        $queryResult = $this->db->query($queryString, array($postSn));
+        if ($queryResult->num_rows() == 0) {
+            return "";
+        }
+        if (is_null($queryResult->row()->coContent)) {
+            return "";
+        } else {
+            return $queryResult->row()->coContent;
+        }
+    }
+
+    public function setLike($postSn, $userSn) {
+        $data = array(
+            'coUserSn' => $userSn,
+            'coPostSn' => $postSn
+        );
+
+        $queryString = "SELECT COUNT(coPostSn) AS coLike FROM FavorateTable WHERE coUserSn=? AND coPostSn=?";
+        $queryResult = $this->db->query($queryString, array($userSn, $postSn));
+        if ($queryResult->row()->coLike == 0) {
+            $this->db->insert('FavorateTable', $data);
+        }
+    }
+
+    public function unsetLike($postSn, $userSn) {
+        do {
+            $queryString = "SELECT COUNT(coPostSn) AS coLike FROM FavorateTable WHERE coUserSn=? AND coPostSn=?";
+            $queryResult = $this->db->query($queryString, array($userSn, $postSn));
+            if ($queryResult->row()->coLike > 0) {
+                $queryString = "DELETE FROM FavorateTable WHERE coUserSn=? AND coPostSn=?";
+                $this->db->query($queryString, array($userSn, $postSn));
+            } else {
+                break;
+            }
+        } while(true);
+
     }
 }

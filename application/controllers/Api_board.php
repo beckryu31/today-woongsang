@@ -325,6 +325,9 @@ class Api_board extends CI_Controller
             case self::BOARD_TYPE_MARKET:
                 $data = $this->Boards_model->getBoardList($regionCode, $boardType);
                 break;
+            case self::BOARD_TYPE_NOTICE:
+                $data = $this->Boards_model->getBoardList($regionCode, $boardType);
+                break;
             default:
                 $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_BOARD_TYPE));
                 return;
@@ -426,6 +429,122 @@ class Api_board extends CI_Controller
             'return_code' => Bd_error::BD_ERR_SUCCESS,
             'msg' => $this->bd_error->get_error_msg(Bd_error::BD_ERR_SUCCESS),
             'data' => $mainTag
+        );
+
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
+    public function content() {
+        if (! isset($_POST['data1'])) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_PARAM));
+            return;
+        }
+        if (! isset($_POST['data2'])) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_PARAM));
+            return;
+        }
+        if (! isset($_POST['data3'])) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_PARAM));
+            return;
+        }
+        if (! isset($_POST['data4'])) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_PARAM));
+            return;
+        }
+        if (! isset($_POST['data5'])) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_PARAM));
+            return;
+        }
+
+        $userSn = intval($this->input->post('data1'));
+        $deviceId = $this->input->post('data2');
+
+        if ($this->Users_model->checkUser($userSn, $deviceId) == false) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_AUTH_FAILED));
+            return;
+        }
+
+        $regionCode = intval($this->input->post('data3'));
+        $boardType = intval($this->input->post('data4'));
+        $postSn = intval($this->input->post('data5'));
+
+        switch($boardType) {
+            case self::BOARD_TYPE_HOT_PLACE:
+                $data = $this->Boards_model->getTalkContent($postSn, $userSn);
+                break;
+            case self::BOARD_TYPE_TALK:
+                $data = $this->Boards_model->getPosting($regionCode, $boardType);
+                break;
+            case self::BOARD_TYPE_COUPON:
+                $data = $this->Boards_model->getBoardList($regionCode, $boardType);
+                break;
+            case self::BOARD_TYPE_BIG_SALE:
+                $data = $this->Boards_model->getBoardList($regionCode, $boardType);
+                break;
+            case self::BOARD_TYPE_EVENT:
+                $data = $this->Boards_model->getBoardList($regionCode, $boardType);
+                break;
+            case self::BOARD_TYPE_PRICE_INFO:
+                $data = $this->Boards_model->getBoardList($regionCode, $boardType);
+                break;
+            case self::BOARD_TYPE_MARKET:
+                $data = $this->Boards_model->getBoardList($regionCode, $boardType);
+                break;
+            case self::BOARD_TYPE_NOTICE:
+                $data = $this->Boards_model->getNoticeContent($postSn);
+                break;
+            default:
+                $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_BOARD_TYPE));
+                return;
+        }
+
+        $result = array(
+            'return_code' => Bd_error::BD_ERR_SUCCESS,
+            'msg' => $this->bd_error->get_error_msg(Bd_error::BD_ERR_SUCCESS),
+            'data' => $data
+        );
+
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
+    public function like() {
+        if (! isset($_POST['data1'])) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_PARAM));
+            return;
+        }
+        if (! isset($_POST['data2'])) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_PARAM));
+            return;
+        }
+        if (! isset($_POST['data3'])) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_PARAM));
+            return;
+        }
+        if (! isset($_POST['data4'])) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_INVALID_PARAM));
+            return;
+        }
+
+        $userSn = intval($this->input->post('data1'));
+        $deviceId = $this->input->post('data2');
+
+        if ($this->Users_model->checkUser($userSn, $deviceId) == false) {
+            $this->output->set_content_type('application/json')->set_output($this->bd_error->make_json_error_msg(Bd_error::BD_ERR_AUTH_FAILED));
+            return;
+        }
+
+        $postSn = intval($this->input->post('data3'));
+        $isLike = intval($this->input->post('data4'));
+
+        if ($isLike > 0) {
+            $this->Boards_model->setLike($postSn, $userSn);
+        } else {
+            $this->Boards_model->unsetLike($postSn, $userSn);
+        }
+
+        $result = array(
+            'return_code' => Bd_error::BD_ERR_SUCCESS,
+            'msg' => $this->bd_error->get_error_msg(Bd_error::BD_ERR_SUCCESS)
         );
 
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
